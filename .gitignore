@@ -87,3 +87,5 @@ target/
 
 # Mypy cache
 .mypy_cache/
+# Ignore environment
+.opf_venv/*
