@@ -1,0 +1,12 @@
+{
+    "DG_Pnom": 500,
+    "DG_Pmin": 0,
+    "DG_Pmax": 500,
+    "DG_fp_min": 0.9,
+    "DG_a": 0.005,
+    "DG_b": 0.5,
+    "DG_c": 0,
+    "DG_ramp_up": 0.5,
+    "DG_ramp_dw": -1,
+    "Pdg_ini": 0
+}

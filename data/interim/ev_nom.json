@@ -1,0 +1,13 @@
+{
+    "EV_Pmin": -1,
+    "EV_Pmax": 1,
+    "EV_Pnom": 8,
+    "EV_pf_min": 1,
+    "EV_EC": 100,
+    "EV_SOC_ini": 50,
+    "EV_SOC_end": 90,
+    "EV_dn": 0.031,
+    "EV_wn": 1.8,
+    "EV_SOC_min": 50,
+    "EV_SOC_max": 95
+}

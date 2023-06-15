@@ -1,0 +1,12 @@
+{
+    "ESS_Pmin": -1,
+    "ESS_Pmax": 1,
+    "ESS_Pnom": 500,
+    "ESS_pf_min": 1,
+    "ESS_EC": 1000,
+    "ESS_SOC_ini": 50,
+    "ESS_SOC_end": 50,
+    "ESS_dn": 0.027,
+    "SOC_min": 10,
+    "SOC_max": 95
+}

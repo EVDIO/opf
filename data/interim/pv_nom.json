@@ -1,0 +1,12 @@
+{
+    "PV_Pmin": -1,
+    "PV_Pmax": 1,
+    "PV_Pnom": 500,
+    "PV_pf_min": 1,
+    "PV_EC": 1000,
+    "PV_SOC_ini": 50,
+    "PV_SOC_end": 50,
+    "PV_dn": 0.027,
+    "SOC_min": 10,
+    "SOC_max": 95
+}
