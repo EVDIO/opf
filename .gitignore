@@ -7,7 +7,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
+opf_venv/
 build/
 develop-eggs/
 dist/
@@ -88,4 +88,4 @@ target/
 # Mypy cache
 .mypy_cache/
 # Ignore environment
-.opf_venv/*
+*opf_venv/*
