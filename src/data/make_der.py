@@ -7,7 +7,7 @@ import json
 def append_data(name, row_val,row, dict_):
     if row_val == name:
         # append new values to each list in the dictionary
-        for j, (key, value) in enumerate(dict_.items()):
+        for _, (key, value) in enumerate(dict_.items()):
             if dict_["Nodes"]:
                 if key == "Nodes":
                     dict_[key].append(row[0])
@@ -44,11 +44,11 @@ def process_files(input_path_nodes,output_path):
             append_data('pv', row_val, row, pv_nom)
 
     for file in file_names_open:
-        output_filename = 'df_' + file[:-9] + '.csv'
+        output_filename = 'asset_' + file[:-9] + '.csv'
         output_path_save = os.path.join(output_path,output_filename)
-        print('df_' + file[:-9])
-        globals()['df_' + file[:-9]] = pd.DataFrame(globals()[file[:-5]])
-        globals()['df_' + file[:-9]].to_csv(output_path_save)
+        print('asset_' + file[:-9])
+        globals()['asset_' + file[:-9]] = pd.DataFrame(globals()[file[:-5]])
+        globals()['asset_' + file[:-9]].to_csv(output_path_save)
 
     print('DER data saved!')
 
