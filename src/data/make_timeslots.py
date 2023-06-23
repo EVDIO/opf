@@ -29,8 +29,8 @@ def create_timestep_data(HOURS,DAYS,interim_path,processed_path):
     dict_data = {}
     for i in range(num_of_cons):
 
-        column_act = 'PD'+'_'+str(i+1)+'_'+str(asset_cons["Nodes"][i])
-        column_react = 'QD'+'_'+str(i+1)+'_'+str(asset_cons["Nodes"][i])
+        column_act = 'PD'+'_'+str(asset_cons["Nodes"][i])+'_'+str(i)
+        column_react = 'QD'+'_'+str(asset_cons["Nodes"][i])+'_'+str(i)
         dict_data[column_act] = mean_active
         dict_data[column_react] = mean_reactive
 
@@ -42,7 +42,7 @@ def create_timestep_data(HOURS,DAYS,interim_path,processed_path):
 
     for i in range(num_of_pv):
 
-        column_pv = 'PV'+'_'+str(i+1)+'_'+str(asset_pv["Nodes"][i])
+        column_pv = 'PV'+'_'+str(asset_pv["Nodes"][i])+'_'+str(i)
         dict_data[column_pv] = mean_pv
 
 
@@ -77,7 +77,7 @@ def create_timestep_data(HOURS,DAYS,interim_path,processed_path):
 if __name__ == '__main__':
 
     HOURS = 24
-    DAYS = 10
+    DAYS = 1    
 
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_dir = os.path.join(root_dir, '..')

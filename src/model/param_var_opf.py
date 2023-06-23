@@ -27,7 +27,7 @@ def param_var_time(model,path_time):
     
     return model
 
-def param_var_dg(model,path_dg):
+def param_var_dg(model,path_dg,Snom):
     
     """
     Sets the generator data for the optimization model.
@@ -41,12 +41,13 @@ def param_var_dg(model,path_dg):
     """
 
     # Get generator data
-    Odg,DG_Pmin,DG_Pmax,DG_fp_min,DG_ramp_up,DG_ramp_dw,DG_a = get_data_dg(path_dg)
+    Odg,DG_Pnom,DG_Pmin,DG_Pmax,DG_fp_min,DG_ramp_up,DG_ramp_dw,DG_a = get_data_dg(path_dg,Snom)
 
     # Set generator nodes
     model.Odg = Set(initialize=Odg)
 
     # Parameters
+    model.DG_Pnom = Param(model.Odg, initialize=DG_Pnom, mutable=True)  # minimum power DGs
     model.DG_Pmin = Param(model.Odg, initialize=DG_Pmin, mutable=True)  # minimum power DGs
     model.DG_Pmax = Param(model.Odg, initialize=DG_Pmax, mutable=True)  # maximum power DGs
     model.DG_fp_min = Param(model.Odg, initialize=DG_fp_min, mutable=True)  # minimum power factor DGs
@@ -61,7 +62,7 @@ def param_var_dg(model,path_dg):
 
     return model
 
-def param_var_con(model,path_con,path_time):
+def param_var_con(model,path_con,path_time,Snom):
 
     """
     Sets the consumer data for the optimization model.
@@ -76,7 +77,7 @@ def param_var_con(model,path_con,path_time):
     """
 
     # Get consumer data
-    Ocons,CONS_nodes,CONS_Pmin,CONS_Pmax,CONS_pf,CONS_an,CONS_bn,PM,QM,PD,QD = get_data_cons(path_con,path_time)
+    Ocons,CONS_nodes,CONS_Pmin,CONS_Pmax,CONS_pf,CONS_an,CONS_bn,PM,QM,PD,QD = get_data_cons(path_con, path_time, Snom)
 
     # Set nodes
     model.Ocons = Set(initialize=Ocons)
@@ -98,7 +99,7 @@ def param_var_con(model,path_con,path_time):
 
     return model
 
-def param_var_pv(model,path_pv,path_time):
+def param_var_pv(model,path_pv,path_time, Snom):
         
     """
     Sets the pv data for the optimization model.
@@ -113,7 +114,7 @@ def param_var_pv(model,path_pv,path_time):
     """
 
     # Get pv data
-    Opv,PV_Pmin,PV_Pmax,G,PV_pf,PV_sn = get_data_pv(path_pv,path_time)
+    Opv,PV_Pnom,PV_Pmin,PV_Pmax,PV_pf,PV_sn,G = get_data_pv(path_pv, path_time, Snom)
     
     model.Opv = Set(initialize=Opv)
 
@@ -129,7 +130,7 @@ def param_var_pv(model,path_pv,path_time):
 
     return model
 
-def param_var_ess(model,path_ess):
+def param_var_ess(model,path_ess, Snom):
 
     """
     Sets the energy storage system data for the optimization model.
@@ -143,7 +144,7 @@ def param_var_ess(model,path_ess):
     """
 
     # Get ESS data
-    Oess,ESS_Pmin,ESS_Pmax,ESS_pf_min,ESS_EC,ESS_SOC_ini,ESS_SOC_end,ESS_dn,ESS_SOC_min,ESS_SOC_max = get_data_ess(path_ess)
+    Oess,ESS_Pnom,ESS_Pmin,ESS_Pmax,ESS_pf_min,ESS_EC,ESS_SOC_ini,ESS_SOC_end,ESS_dn,ESS_SOC_min,ESS_SOC_max = get_data_ess(path_ess,Snom)
 
 
     model.Oess = Set(initialize=Oess)
@@ -167,9 +168,9 @@ def param_var_ess(model,path_ess):
 
     return model
 
-def param_var_ev(model,path_ev):
+def param_var_ev(model,path_ev, Snom):
 
-    Oev,EV_nodes,EV_Pmin,EV_Pmax,EV_Pnom,EV_pf_min,EV_EC,EV_SOC_ini,EV_SOC_end,EV_SOC_min,EV_SOC_max,EV_dn,EV_wn,t_arr,t_dep = get_data_ev(path_ev)
+    Oev,EV_nodes,EV_Pmin,EV_Pmax,EV_Pnom,EV_pf_min,EV_EC,EV_SOC_ini,EV_SOC_end,EV_SOC_min,EV_SOC_max,EV_dn,EV_wn,t_arr,t_dep = get_data_ev(path_ev, Snom)
 
     model.Oev = Set(initialize=Oev)
     model.EV_nodes = Set(initialize=EV_nodes)
@@ -197,7 +198,7 @@ def param_var_ev(model,path_ev):
 
     return model
 
-def param_var_network(model,path_bus,path_line):
+def param_var_network(model,path_bus,path_line, Vnom, Snom, Vmin, Vmax):
 
     """
     Sets the network data for the optimization model.
@@ -211,15 +212,17 @@ def param_var_network(model,path_bus,path_line):
         Pyomo abstract model object with network data set as parameters and variables
     """
     
-    Ob,Ol,Vmin,Vmax,R,X,Imax = get_data_network(path_bus,path_line)
+    Ob,Ol,R,X,Imax = get_data_network(path_bus,path_line,Vnom, Snom)
     
     # define Sets
     model.Ob = Set(initialize=Ob)
     model.Ol = Set(initialize=Ol)
     
-    # define parameters
-    model.Vmin = Param(model.Ob, initialize=Vmin, mutable=True)   # minimum voltage magnitude
-    model.Vmax = Param(model.Ob, initialize=Vmax, mutable=True)   # maximum voltage magnitude
+    # Define Parameters
+    model.Vnom = Param(initialize=Vnom, mutable=True)   # Base voltage magnitude
+    model.Snom = Param(initialize=Snom, mutable=True)   # Base apparent power
+    model.Vmin = Param(initialize=Vmin, mutable=True)   # Minimum voltage magnitude
+    model.Vmax = Param(initialize=Vmax, mutable=True)   # Maximum voltage magnitude
     model.R = Param(model.Ol, initialize=R, mutable=True) # line resistance
     model.X = Param(model.Ol, initialize=X, mutable=True) # line reactance
     model.Imax = Param(model.Ol, initialize=Imax, mutable=True) # maximum current magnitude

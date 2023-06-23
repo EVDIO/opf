@@ -67,6 +67,7 @@ def get_data_dg(path_dg,Snom):
 
     # Generators - DGs
     Odg = [df_gen.loc[i, 'Nodes'] for i in df_gen.index]      # nodes with DG
+    DG_Pnom = {Odg[i]: df_gen.loc[i, 'DG_Pnom']/Snom for i in df_gen.index}     # minimum active power DG [pu]
     DG_Pmin = {Odg[i]: df_gen.loc[i, 'DG_Pmin']/Snom for i in df_gen.index}     # minimum active power DG [pu]
     DG_Pmax = {Odg[i]: df_gen.loc[i, 'DG_Pmax']/Snom for i in df_gen.index}     # maximum active power DG [pu]
     DG_fp_min = {Odg[i]: df_gen.loc[i, 'DG_fp_min'] for i in df_gen.index}     # minimum power factor DG
@@ -74,7 +75,7 @@ def get_data_dg(path_dg,Snom):
     DG_ramp_dw = {Odg[i]: df_gen.loc[i, 'DG_ramp_dw'] for i in df_gen.index} # ramp down constraint
     DG_a = {Odg[i]: df_gen.loc[i, 'DG_a'] for i in df_gen.index}            # quadratic coefficient cost DG
 
-    return [Odg,DG_Pmin,DG_Pmax,DG_fp_min,DG_ramp_up,DG_ramp_dw,DG_a]
+    return [Odg,DG_Pnom,DG_Pmin,DG_Pmax,DG_fp_min,DG_ramp_up,DG_ramp_dw,DG_a]
 
 def get_data_pv(path_pv,path_time,Snom):
 
@@ -91,12 +92,12 @@ def get_data_pv(path_pv,path_time,Snom):
 
     # PV
     Opv = [df_pv.loc[i, 'Nodes'] for i in df_pv.index]             # nodes with PV
-    PV_Pnom = {Ores[i]: df_pv.loc[i, 'PV_Pnom']/ (Snom) for i in df_pv.index}                     # Nominal power PV
-    PV_pf = {Ores[i]: df_pv.loc[i, 'PV_pf'] for i in df_pv.index}                         # Power factor PV
-    PV_sn = {Ores[i]: df_pv.loc[i, 'PV_sn'] for i in df_pv.index}                         # Per unit subsidy
-    PV_Pmin = {Ores[i]: df_pv.loc[i, 'PV_min'] for i in df_pv.index}                     # Minimum power PV
-    PV_Pmax = {Ores[i]: df_pv.loc[i, 'PV_max'] for i in df_pv.index}   
-    OT = [df_time.loc[i, 'T'] for i in df_time.index]                # list of time points
+    PV_Pnom = {Opv[i]: df_pv.loc[i, 'PV_Pnom']/ (Snom) for i in df_pv.index}                     # Nominal power PV
+    PV_pf = {Opv[i]: df_pv.loc[i, 'PV_pf_min'] for i in df_pv.index}                         # Power factor PV
+    PV_sn = {Opv[i]: df_pv.loc[i, 'PV_sn'] for i in df_pv.index}                         # Per unit subsidy
+    PV_Pmin = {Opv[i]: df_pv.loc[i, 'PV_Pmin'] for i in df_pv.index}                     # Minimum power PV
+    PV_Pmax = {Opv[i]: df_pv.loc[i, 'PV_Pmax'] for i in df_pv.index}   
+    OT = [i+1 for i in df_time.index]                # list of time points
     G =  {(Opv[i], OT[t]): df_time['PV_{}_{}'.format(df_pv['Nodes'][i],i)][t] for i in df_pv.index for t in df_time.index} # maximum power PV for each hour
 
     return [Opv,PV_Pnom,PV_Pmin,PV_Pmax,PV_pf,PV_sn,G]
@@ -126,7 +127,7 @@ def get_data_cons(path_con,path_time,Snom):
     CONS_pf = {Ocons[i]: df_con.loc[i, 'CONS_pf'] for i in df_con.index}      # minimum power factor for consumers
     
     # Demand for consumers
-    OT = [df_time.loc[i, 'T'] for i in df_time.index] # list of time points
+    OT = [i+1 for i in df_time.index] # list of time points
     PM = {(Ocons[i], OT[t]): df_time['PD_{}_{}'.format(df_con['Nodes'][i],i)][t]/Snom for i in df_con.index for t in df_time.index} # active power demand [mW]
     QM = {(Ocons[i], OT[t]): df_time['QD_{}_{}'.format(df_con['Nodes'][i],i)][t]/Snom for i in df_con.index for t in df_time.index} # reactive power demand [mW]
 
@@ -146,7 +147,7 @@ def get_data_ess(path_ess,Snom):
     df_ess = pd.read_csv(path_ess)
 
     # Energy storage systems (ESS)
-    Oess = [df_ess.loc[i, 'ESS_node'] for i in df_ess.index]                              # nodes with ESS
+    Oess = [df_ess.loc[i, 'Nodes'] for i in df_ess.index]                              # nodes with ESS
     ESS_Pnom = {Oess[i]: df_ess.loc[i, 'ESS_Pnom']/Snom for i in df_ess.index}                 # maximum power ESS
     ESS_Pmin = {Oess[i]: df_ess.loc[i, 'ESS_Pmin'] for i in df_ess.index}                 # minimum power ESS
     ESS_Pmax = {Oess[i]: df_ess.loc[i, 'ESS_Pmax'] for i in df_ess.index}                 # maximum power ESS
@@ -158,7 +159,7 @@ def get_data_ess(path_ess,Snom):
     ESS_SOC_min = {Oess[i]: df_ess.loc[i, 'SOC_min']/100 for i in df_ess.index}           # minimum state of charge ESS
     ESS_SOC_max = {Oess[i]: df_ess.loc[i, 'SOC_max']/100 for i in df_ess.index}           # maximum state of charge ESS
 
-    return [Oess,ESS_Pmin,ESS_Pmax,ESS_pf_min,ESS_EC,ESS_SOC_ini,ESS_SOC_end,ESS_dn,ESS_SOC_min,ESS_SOC_max]
+    return [Oess,ESS_Pnom,ESS_Pmin,ESS_Pmax,ESS_pf_min,ESS_EC,ESS_SOC_ini,ESS_SOC_end,ESS_dn,ESS_SOC_min,ESS_SOC_max]
 
 
 def get_data_ev(path_ev,Snom):
@@ -168,7 +169,7 @@ def get_data_ev(path_ev,Snom):
 
     # Electric vehicles (EV)
     Oev = [i+1 for i in df_ev.index]                                      # Index EVs
-    EV_nodes = {(i,df_ev.loc[i-1, 'EV_node']) for i in Oev}                                      # Nodes with EVs
+    EV_nodes = {(i,df_ev.loc[i-1, 'Nodes']) for i in Oev}                                      # Nodes with EVs
     EV_Pmin = {i:df_ev.loc[i-1, 'EV_Pmin'] for i in Oev}                                  # Minimum power EVs
     EV_Pmax = {i:df_ev.loc[i-1, 'EV_Pmax'] for i in Oev}                                # Maximum power EVs
     EV_Pnom = {i:df_ev.loc[i-1, 'EV_Pnom']/Snom for i in Oev}                               # Nominal power EVs

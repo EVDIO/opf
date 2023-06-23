@@ -6,41 +6,54 @@ This script is simulating the AC-OPF for DERs using pyomo library
 # Import libraries
 from pyomo.environ import *
 
+import json
 from .param_var_opf import param_var_time,param_var_dg,param_var_con,param_var_ev,param_var_network,param_var_temp,param_var_pv,param_var_ess
 
 
 def run_opf(model):
 
+    json_file = r"C:\Users\Dell\Documents\GitHub\opf\data\processed\network_nom.json"
+    with open(json_file) as f:
+        network_nom = json.load(f)
+    
+    Vnom = network_nom["Vnom"]
+    Snom = network_nom["Snom"]
+    Vmin = network_nom["Vmin"]
+    Vmax = network_nom["Vmax"]
+
     # Define paths
-    pth = r'C:\Users\Dell\Documents\GitHub\PINNS_OPF\opf\data\processed'
+    pth = r'C:\Users\Dell\Documents\GitHub\opf\data\processed'
     con = r'\asset_cons.csv'
     ess = r'\asset_ess.csv'
     ev = r'\asset_ev.csv'
-    dg = r'\asset_gen.csv'
+    dg = r'\asset_dg.csv'
     pv  = r'\asset_pv.csv'
-    bus = r'\bus5.csv'
-    line= r'\line5.csv'
+    bus = r'\nodes_33.csv'
+    line= r'\lines_33.csv'
     time= r'\time_slots.csv'
-
 
     # Set variables and parameters for time data
     model = param_var_time(model=model, path_time=pth+time)
     # Set variables and parameters for dg data
-    model = param_var_dg(model=model, path_dg=pth+dg)
+    model = param_var_dg(model=model, path_dg=pth+dg, Snom=Snom)
     # Set variables and parameters for comsumers
     model = param_var_con(model=model, path_con=pth+con,
-                        path_time=pth+time)
+                        path_time=pth+time, Snom=Snom)
     # Set variables and parameters for pv
     model = param_var_pv(model=model, path_pv=pth+pv,
-                        path_time=pth+time)
+                        path_time=pth+time, Snom=Snom)
     # Set variables and parameters for ess
-    model = param_var_ess(model=model, path_ess=pth+ess)
+    model = param_var_ess(model=model, path_ess=pth+ess, Snom=Snom)
     # Set variables and parameters for ev
-    model = param_var_ev(model=model, path_ev=pth+ev)
+    model = param_var_ev(model=model, path_ev=pth+ev, Snom=Snom)
     # Set variables and parameters for network
     model = param_var_network(model=model, path_bus=pth+bus,
-                            path_line=pth+line)
+                            path_line=pth+line, Vnom=Vnom, Snom=Snom, Vmin=Vmin, Vmax=Vmax)
     model = param_var_temp(model=model)
+
+
+
+
     # Set rules for DGs
     def DG_decision_var_rule(model,i,t):
         """
@@ -343,7 +356,7 @@ def run_opf(model):
     model.define_current = Constraint(model.Ol, model.OT, rule=define_current_rule) # Power flow
 
     def voltage_limit_rule(model,i,t):
-        return (model.Vmin[i] , model.V[i,t], model.Vmax[i])
+        return (model.Vmin , model.V[i,t], model.Vmax)
     model.voltage_limit = Constraint(model.Ob, model.OT, rule = voltage_limit_rule)
 
     def current_limit_rule(model,i,j,t):
