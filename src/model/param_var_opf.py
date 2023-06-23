@@ -16,7 +16,7 @@ def param_var_time(model,path_time):
     """
 
     # Get time slot data
-    OT,sc_res,Delta_t,pt = get_data_time(path_time)
+    OT,Delta_t,pt = get_data_time(path_time)
 
     # Set time nodes
     model.OT = Set(initialize=OT)
