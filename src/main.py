@@ -32,7 +32,7 @@ variable_data = {}
 for v in model.component_objects(Var, active=True):
     variable_name = v.name
     
-    if variable_name in ['dg_x', 'Qdg', 'cons_x', 'Qcons', 'ess_x', 'Qees', 'pv_x', 'Qpv']:
+    if variable_name in ['dg_x', 'Qdg', 'cons_x', 'Qcons', 'ess_x', 'Qees', 'pv_x', 'Qpv','V']:
         variable_data[variable_name] = {}
         
         for i,index in enumerate(v):
