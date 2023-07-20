@@ -37,6 +37,7 @@ def get_data_network(path_bus,path_line,Vnom,Snom):
     # Network Data
     # Buses
     Ob = [df_bus.loc[i,'Nodes'] for i in df_bus.index] # bus indexes
+    Tb = {(Ob[i], df_bus.loc[i, 'Tb']) for i in df_bus.index}
 
     # Branches
     Ol = {(df_line.loc[i, 'From'], df_line.loc[i, 'To']) for i in df_line.index}  # nodes of lines
@@ -49,10 +50,11 @@ def get_data_network(path_bus,path_line,Vnom,Snom):
     
     Imax = {(df_line.loc[i, 'From'], df_line.loc[i, 'To']):
             df_line.loc[i, 'Imax']/(Snom/Vnom) for i in df_line.index}  # maximum current [pu]
-
+    
+    Tb = sorted(Tb, key=lambda x: x[0])
     Ol = sorted(Ol, key=lambda x: x[0])
 
-    return [Ob,Ol,R,X,Imax]
+    return [Ob,Tb,Ol,R,X,Imax]
 
 def get_data_dg(path_dg,Snom):
 
@@ -65,8 +67,8 @@ def get_data_dg(path_dg,Snom):
     # read csv to dataframe
     df_gen = pd.read_csv(path_dg)
 
-    # Generators - DGs
-    Odg = [df_gen.loc[i, 'Nodes'] for i in df_gen.index]      # nodes with DG
+    Odg = [i+1 for i in df_gen.index]                                       # index of DG
+    DG_nodes = {(Odg[i], df_gen.loc[i, 'Nodes']) for i in df_gen.index}           # nodes with DG    # nodes with DG
     DG_Pnom = {Odg[i]: df_gen.loc[i, 'DG_Pnom']/Snom for i in df_gen.index}     # minimum active power DG [pu]
     DG_Pmin = {Odg[i]: df_gen.loc[i, 'DG_Pmin']/Snom for i in df_gen.index}     # minimum active power DG [pu]
     DG_Pmax = {Odg[i]: df_gen.loc[i, 'DG_Pmax']/Snom for i in df_gen.index}     # maximum active power DG [pu]
@@ -75,7 +77,9 @@ def get_data_dg(path_dg,Snom):
     DG_ramp_dw = {Odg[i]: df_gen.loc[i, 'DG_ramp_dw'] for i in df_gen.index} # ramp down constraint
     DG_a = {Odg[i]: df_gen.loc[i, 'DG_a'] for i in df_gen.index}            # quadratic coefficient cost DG
 
-    return [Odg,DG_Pnom,DG_Pmin,DG_Pmax,DG_fp_min,DG_ramp_up,DG_ramp_dw,DG_a]
+    DG_nodes = sorted(DG_nodes, key=lambda x: x[0])
+
+    return [Odg,DG_nodes,DG_Pnom,DG_Pmin,DG_Pmax,DG_fp_min,DG_ramp_up,DG_ramp_dw,DG_a]
 
 def get_data_pv(path_pv,path_time,Snom):
 
@@ -91,7 +95,8 @@ def get_data_pv(path_pv,path_time,Snom):
     df_time = pd.read_csv(path_time)
 
     # PV
-    Opv = [df_pv.loc[i, 'Nodes'] for i in df_pv.index]             # nodes with PV
+    Opv = [i+1 for i in df_pv.index]                                       # index of consumers
+    PV_nodes = {(Opv[i], df_pv.loc[i, 'Nodes']) for i in df_pv.index}           # nodes with PV
     PV_Pnom = {Opv[i]: df_pv.loc[i, 'PV_Pnom']/ (Snom) for i in df_pv.index}                     # Nominal power PV
     PV_pf = {Opv[i]: df_pv.loc[i, 'PV_pf_min'] for i in df_pv.index}                         # Power factor PV
     PV_sn = {Opv[i]: df_pv.loc[i, 'PV_sn'] for i in df_pv.index}                         # Per unit subsidy
@@ -100,7 +105,9 @@ def get_data_pv(path_pv,path_time,Snom):
     OT = [i+1 for i in df_time.index]                # list of time points
     G =  {(Opv[i], OT[t]): df_time['PV_{}_{}'.format(df_pv['Nodes'][i],i)][t] for i in df_pv.index for t in df_time.index} # maximum power PV for each hour
 
-    return [Opv,PV_Pnom,PV_Pmin,PV_Pmax,PV_pf,PV_sn,G]
+    PV_nodes = sorted(PV_nodes, key=lambda x: x[0])
+
+    return [Opv,PV_nodes,PV_Pnom,PV_Pmin,PV_Pmax,PV_pf,PV_sn,G]
 
 def get_data_cons(path_con,path_time,Snom):
 
@@ -147,7 +154,9 @@ def get_data_ess(path_ess,Snom):
     df_ess = pd.read_csv(path_ess)
 
     # Energy storage systems (ESS)
-    Oess = [df_ess.loc[i, 'Nodes'] for i in df_ess.index]                              # nodes with ESS
+    # consumers 
+    Oess = [i+1 for i in df_ess.index]                                       # index of ess
+    ESS_nodes = {(Oess[i], df_ess.loc[i, 'Nodes']) for i in df_ess.index} # nodes with ess    
     ESS_Pnom = {Oess[i]: df_ess.loc[i, 'ESS_Pnom']/Snom for i in df_ess.index}                 # maximum power ESS
     ESS_Pmin = {Oess[i]: df_ess.loc[i, 'ESS_Pmin'] for i in df_ess.index}                 # minimum power ESS
     ESS_Pmax = {Oess[i]: df_ess.loc[i, 'ESS_Pmax'] for i in df_ess.index}                 # maximum power ESS
@@ -159,7 +168,9 @@ def get_data_ess(path_ess,Snom):
     ESS_SOC_min = {Oess[i]: df_ess.loc[i, 'SOC_min']/100 for i in df_ess.index}           # minimum state of charge ESS
     ESS_SOC_max = {Oess[i]: df_ess.loc[i, 'SOC_max']/100 for i in df_ess.index}           # maximum state of charge ESS
 
-    return [Oess,ESS_Pnom,ESS_Pmin,ESS_Pmax,ESS_pf_min,ESS_EC,ESS_SOC_ini,ESS_SOC_end,ESS_dn,ESS_SOC_min,ESS_SOC_max]
+    ESS_nodes = sorted(ESS_nodes, key=lambda x: x[0])
+
+    return [Oess,ESS_nodes,ESS_Pnom,ESS_Pmin,ESS_Pmax,ESS_pf_min,ESS_EC,ESS_SOC_ini,ESS_SOC_end,ESS_dn,ESS_SOC_min,ESS_SOC_max]
 
 
 def get_data_ev(path_ev,Snom):

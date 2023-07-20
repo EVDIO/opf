@@ -9,7 +9,7 @@ from pyomo.environ import *
 import json
 from .param_var_opf import param_var_time,param_var_dg,param_var_con,param_var_ev,param_var_network,param_var_temp,param_var_pv,param_var_ess
 
-
+    
 def run_opf(model):
 
     json_file = r"C:\Users\Dell\Documents\GitHub\opf\data\processed\network_nom.json"
@@ -28,8 +28,8 @@ def run_opf(model):
     ev = r'\asset_ev.csv'
     dg = r'\asset_dg.csv'
     pv  = r'\asset_pv.csv'
-    bus = r'\nodes_33.csv'
-    line= r'\lines_33.csv'
+    bus = r'\nodes_5.csv'
+    line= r'\lines_5.csv'
     time= r'\time_slots.csv'
 
     # Set variables and parameters for time data
@@ -52,6 +52,15 @@ def run_opf(model):
     model = param_var_temp(model=model)
 
 
+
+    
+    def R_init_rule(model, i,j):
+        return (model.R[i,j])
+    model.RM = Param(model.Ol, initialize= R_init_rule) # Line resistance
+    
+    def X_init_rule(model, i,j):
+        return (model.X[i,j])
+    model.XM = Param(model.Ol, initialize= X_init_rule) # Line reactance
 
 
     # Set rules for DGs
@@ -233,7 +242,7 @@ def run_opf(model):
     #####################
     # ----- EVs -------- #
     def EV_constr_active_power_rule(model, i, t):
-        if model.t_arr[i].value <= t <= model.t_dep[i].value:
+        if model.t_arr[i] <= t <= model.t_dep[i]:
             return (model.EV_Pmin[i]*model.EV_Pnom[i], model.Pev[i,t], model.EV_Pmax[i]*model.EV_Pnom[i])
         else:
             return (model.Pev[i, t] == 0.0)
@@ -252,7 +261,7 @@ def run_opf(model):
     #
     #
     def EV_constr_SOC_1_rule(model, i, t):
-        if t <= model.t_arr[i].value:
+        if t <= model.t_arr[i]:
             return (model.SOC_EV[i,t] == model.EV_SOC_ini[i] - model.Delta_t[t]/model.EV_EC[i]*model.Pev[i,t])
         else:
             return (model.SOC_EV[i,t] == model.SOC_EV[i,t-1] - model.Delta_t[t]/model.EV_EC[i]*model.Pev[i,t])
@@ -265,7 +274,7 @@ def run_opf(model):
                                         rule=EV_constr_SOC_2_rule)  # Minimum, Maximum reactive power from ESS
 
     def EV_constr_SOC_departure_rule(model, i):
-        return (model.SOC_EV[i,model.t_dep[i].value] + model.E_non_served[i] >= model.EV_SOC_end[i]) #
+        return (model.SOC_EV[i,model.t_dep[i]] + model.E_non_served[i] >= model.EV_SOC_end[i]) #
     model.EV_constr_SOC_departure = Constraint(model.Oev,
                                         rule=EV_constr_SOC_departure_rule)  # Minimum, Maximum reactive power from ESS
 
@@ -308,39 +317,39 @@ def run_opf(model):
     # Constrains of the network
     def active_power_flow_rule(model, k,t):
             
-            active_power_parent = sum(model.P[j,i,t] for j,i in model.Ol if i == k )
-            active_power_dg = sum(model.dg_x[i,t]*model.DG_Pmax[i] for i in model.Odg if k == i)
-            active_power_pv = sum(model.pv_x[i,t] * model.G[i,t] for i in model.Opv if k==i)
-            active_power_ess = sum(model.ess_x[i,t]*model.ESS_Pmax[i] for i in model.Oess if k==i)
-         #   active_power_cons = sum(model.cons_x[i,t] * model.PM[i,t] for i,m in model.CONS_nodes if k==m)
+            active_power_parent = sum(model.P[j,i,t] for j,i in model.Ol if k==i )
+            active_power_dg = sum(model.dg_x[i,t]*model.DG_Pmax[i] for i,m in model.DG_nodes if k==m)
+            active_power_pv = sum(model.pv_x[i,t] * model.G[i,t] for i,m in model.PV_nodes if k==m)
+            active_power_ess = sum(model.ess_x[i,t]*model.ESS_Pmax[i] for i,m in model.ESS_nodes if k==m)
+            #active_power_cons = sum(model.cons_x[i,t] * model.PM[i,t] for i,m in model.CONS_nodes if k==m)
             active_power_ev = sum(model.Pev[i,t] for i in model.Oev for i,m in model.EV_nodes if k==m)
-            active_power_child = sum(model.P[i,j,t] + model.R[i,j]*(model.I[i,j,t]) for i,j in model.Ol if k==i)
+            active_power_child = sum(model.P[i,j,t]+model.RM[i,j]*(model.I[i,j,t]) for i,j in model.Ol if k==i)
 
             return (active_power_parent
                     +active_power_dg
-                    +active_power_pv
+                    +active_power_pv    
                     +active_power_ess
-               #     +active_power_cons
+                    #+active_power_cons
                     +active_power_ev
-                    -active_power_child==0)
+                    ==active_power_child)
 
     model.active_power_flow = Constraint(model.Ob, model.OT, rule=active_power_flow_rule)   # Active power balance
 
     def reactive_power_flow_rule(model, k,t):
             
-            reactive_power_parent = sum(model.Q[j,i,t] for j,i in model.Ol if i == k )
-            reactive_power_dg     = sum(model.Qdg[i,t] for i in model.Odg if k == i)
-            reactive_power_pv     = sum(model.Qpv[i,t] for i in model.Opv if k==i)
-            reactive_power_ess    = sum(model.Qess[i,t] for i in model.Oess if k==i)
-        #    reactive_power_cons   = sum(model.Qcons[i,t] for i,m in model.CONS_nodes if k==m)
+            reactive_power_parent = sum(model.Q[j,i,t] for j,i in model.Ol if k==i )
+            reactive_power_dg     = sum(model.Qdg[i,t] for i,m in model.DG_nodes if k==m)
+            reactive_power_pv     = sum(model.Qpv[i,t] for i,m in model.PV_nodes if k==m)
+            reactive_power_ess    = sum(model.Qess[i,t] for i,m in model.ESS_nodes if k==m)
+            reactive_power_cons   = sum(model.Qcons[i,t] for i,m in model.CONS_nodes if k==m)
             reactive_power_pv     = sum(model.Qev[i,t]  for i,m in model.EV_nodes if k==m)
-            reactive_power_child  = sum(model.Q[i,j,t] + model.X[i,j]*(model.I[i,j,t]) for i,j in model.Ol if k == i)
+            reactive_power_child  = sum(model.Q[i,j,t] + model.XM[i,j]*(model.I[i,j,t]) for i,j in model.Ol if k==i)
             
             return (reactive_power_parent
                     +reactive_power_dg
                     +reactive_power_pv
                     +reactive_power_ess
-             #       +reactive_power_cons
+                    +reactive_power_cons
                     -reactive_power_child == 0)
 
     
@@ -348,7 +357,7 @@ def run_opf(model):
 
     # what is the square voltage here and square current
     def voltage_drop_rule(model, i, j,t):
-        return (model.V[i,t] - 2*(model.R[i,j]*model.P[i,j,t] + model.X[i,j]*model.Q[i,j,t]) - (model.R[i,j]**2 + model.X[i,j]**2)*model.I[i,j,t] - model.V[j,t] == 0)
+        return (model.V[i,t] - 2*(model.RM[i,j]*model.P[i,j,t] + model.XM[i,j]*model.Q[i,j,t]) - (model.RM[i,j]**2 + model.XM[i,j]**2)*model.I[i,j,t] - model.V[j,t] == 0)
     model.voltage_drop = Constraint(model.Ol, model.OT, rule=voltage_drop_rule) # Voltage drop
 
     def define_current_rule (model, i, j, t):

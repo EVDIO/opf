@@ -30,7 +30,7 @@ def process_files(input_path_nodes,output_path):
 
     file_names_open = ['cons_nom.json', 'dg_nom.json', 'ess_nom.json', 'ev_nom.json', 'pv_nom.json']
     for file in file_names_open:
-        file_path = os.path.join(os.getcwd(), 'data', 'interim', file)
+        file_path = os.path.join("C:\\Users\\Dell\\Documents\\GitHub\\opf\\",'data', 'interim', file)
         with open(file_path) as f:
             print(file[:-5])
             globals()[file[:-5]] = json.load(f)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     raw_data_dir = os.path.join(root_dir, '..')
 
     # Construct input and output paths using relative paths
-    input_path_nodes = os.path.join(raw_data_dir, 'data', 'processed', 'nodes_33.csv')
+    input_path_nodes = os.path.join(raw_data_dir, 'data', 'processed', 'nodes_5.csv')
     output_path = os.path.join(raw_data_dir, 'data', 'processed')
  
-    process_files(input_path_nodes,output_path)
+    process_files(input_path_nodes,output_path) 
